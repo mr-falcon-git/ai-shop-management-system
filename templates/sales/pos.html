@@ -1,0 +1,430 @@
+{% extends 'base.html' %}
+
+{% block title %}Point of Sale - AI Shop Management{% endblock %}
+{% block page_title %}Point of Sale (POS){% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Product Search & List -->
+        <div class="col-lg-7 mb-4">
+            <div class="card">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="bi bi-search"></i> Search Products</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <input type="text" id="productSearch" class="form-control form-control-lg"
+                            placeholder="Search by product name or scan barcode..." autofocus>
+                    </div>
+
+                    <div id="searchResults" class="list-group" style="max-height: 500px; overflow-y: auto;">
+                        <!-- Search results will appear here -->
+                    </div>
+
+                    <!-- All Products -->
+                    <div class="mt-3">
+                        <h6 class="text-muted">Available Products</h6>
+                        <div class="row" id="productGrid">
+                            {% for product in products %}
+                            <div class="col-md-6 col-lg-4 mb-3">
+                                <div class="card h-100 product-card" style="cursor: pointer;" data-id="{{ product.id }}"
+                                    data-name="{{ product.name }}" data-price="{{ product.sell_price }}"
+                                    data-stock="{{ product.stock_quantity }}">
+                                    <div class="card-body">
+                                        <h6 class="card-title">{{ product.name }}</h6>
+                                        <p class="card-text mb-1">
+                                            <small class="text-muted">{{ product.barcode }}</small>
+                                        </p>
+                                        <p class="card-text">
+                                            <strong class="text-primary">TSh {{ product.sell_price }}</strong>
+                                        </p>
+                                        <p class="card-text">
+                                            <small
+                                                class="{% if product.is_low_stock %}text-danger{% else %}text-success{% endif %}">
+                                                Stock: {{ product.stock_quantity }}
+                                            </small>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            {% empty %}
+                            <div class="col-12">
+                                <div class="alert alert-warning">
+                                    <i class="bi bi-exclamation-triangle"></i> No products available in stock.
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Shopping Cart -->
+        <div class="col-lg-5">
+            <div class="card sticky-top" style="top: 20px;">
+                <div class="card-header bg-gradient text-white"
+                    style="background: linear-gradient(135deg, #4f46e5, #06b6d4);">
+                    <h5 class="mb-0"><i class="bi bi-cart3"></i> Shopping Cart</h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center text-muted py-5" id="emptyCart">
+                        <i class="bi bi-cart-x" style="font-size: 3rem;"></i>
+                        <p class="mt-2">Cart is empty</p>
+                    </div>
+                    <div id="cartItems" style="max-height: 400px; overflow-y: auto; display: none;">
+                        <!-- Cart items will be injected here -->
+                    </div>
+
+                    <hr>
+
+                    <div class="mb-3">
+                        <label class="form-label">Payment Method</label>
+                        <select id="paymentMethod" class="form-select">
+                            <option value="cash">Cash</option>
+                            <option value="card">Card</option>
+                            <option value="mobile">Mobile Money</option>
+                        </select>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4>Total:</h4>
+                        <h3 class="text-primary mb-0">TSh <span id="cartTotal">0.00</span></h3>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button id="processBtn" class="btn btn-primary btn-lg" disabled>
+                            <i class="bi bi-check-circle"></i> Process Sale
+                        </button>
+                        <button id="clearBtn" class="btn btn-outline-secondary">
+                            <i class="bi bi-trash"></i> Clear Cart
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success Modal -->
+<div class="modal fade" id="successModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title"><i class="bi bi-check-circle"></i> Sale Completed</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <i class="bi bi-check-circle-fill text-success" style="font-size: 4rem;"></i>
+                <h4 class="mt-3">Sale #<span id="saleId"></span></h4>
+                <h3 class="text-primary">TSh <span id="saleTotal"></span></h3>
+                <p class="text-muted">Transaction completed successfully!</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <a href="#" id="receiptLink" class="btn btn-primary" target="_blank">
+                    <i class="bi bi-printer"></i> Print Receipt
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let cart = [];
+
+    // Product card click handler
+    document.querySelectorAll('.product-card').forEach(card => {
+        card.addEventListener('click', function () {
+            addToCart({
+                id: this.dataset.id,
+                name: this.dataset.name,
+                price: parseFloat(this.dataset.price),
+                stock: parseInt(this.dataset.stock)
+            });
+        });
+    });
+
+    // Search functionality
+    let searchTimeout;
+    document.getElementById('productSearch').addEventListener('input', function () {
+        clearTimeout(searchTimeout);
+        const query = this.value.trim();
+
+        if (query.length < 2) {
+            document.getElementById('searchResults').innerHTML = '';
+            return;
+        }
+
+        searchTimeout = setTimeout(() => {
+            fetch(`/sales/api/search-product/?q=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(products => {
+                    displaySearchResults(products);
+                });
+        }, 300);
+    });
+
+    function displaySearchResults(products) {
+        const resultsDiv = document.getElementById('searchResults');
+
+        if (products.length === 0) {
+            resultsDiv.innerHTML = '<div class="list-group-item text-muted">No products found</div>';
+            return;
+        }
+
+        resultsDiv.innerHTML = products.map(product => `
+        <a href="#" class="list-group-item list-group-item-action search-result-item"
+           data-id="${product.id}"
+           data-name="${product.name}"
+           data-price="${product.sell_price}"
+           data-stock="${product.stock_quantity}">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="mb-1">${product.name}</h6>
+                    <small class="text-muted">${product.barcode}</small>
+                </div>
+                <div class="text-end">
+                    <strong class="text-primary">TSh ${product.sell_price}</strong><br>
+                    <small class="text-muted">Stock: ${product.stock_quantity}</small>
+                </div>
+            </div>
+        </a>
+    `).join('');
+
+        // Add click handlers to search results
+        document.querySelectorAll('.search-result-item').forEach(item => {
+            item.addEventListener('click', function (e) {
+                e.preventDefault();
+                addToCart({
+                    id: this.dataset.id,
+                    name: this.dataset.name,
+                    price: parseFloat(this.dataset.price),
+                    stock: parseInt(this.dataset.stock)
+                });
+                document.getElementById('productSearch').value = '';
+                document.getElementById('searchResults').innerHTML = '';
+            });
+        });
+    }
+
+    function addToCart(product) {
+        const existingItem = cart.find(item => item.id === product.id);
+
+        if (existingItem) {
+            if (existingItem.quantity >= product.stock) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Insufficient Stock',
+                    text: 'Cannot add more of this item.',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+                return;
+            }
+            existingItem.quantity++;
+        } else {
+            cart.push({
+                id: product.id,
+                name: product.name,
+                price: product.price,
+                quantity: 1,
+                stock: product.stock
+            });
+        }
+
+        updateCart();
+    }
+
+    function removeFromCart(productId) {
+        cart = cart.filter(item => item.id !== productId);
+        updateCart();
+    }
+
+    function updateQuantity(productId, change) {
+        const item = cart.find(item => item.id === productId);
+        if (!item) return;
+
+        item.quantity += change;
+
+        if (item.quantity <= 0) {
+            removeFromCart(productId);
+        } else if (item.quantity > item.stock) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Limit Reached',
+                text: 'Cannot exceed available stock!',
+                timer: 2000,
+                showConfirmButton: false
+            });
+            item.quantity = item.stock;
+        }
+
+        updateCart();
+    }
+
+    function updateCart() {
+        const cartDiv = document.getElementById('cartItems');
+        const emptyCart = document.getElementById('emptyCart');
+
+        if (cart.length === 0) {
+            emptyCart.style.display = 'block';
+            cartDiv.style.display = 'none';
+            document.getElementById('cartTotal').textContent = '0.00';
+            document.getElementById('processBtn').disabled = true;
+            return;
+        }
+
+        emptyCart.style.display = 'none';
+        cartDiv.style.display = 'block';
+
+        cartDiv.innerHTML = cart.map(item => `
+        <div class="cart-item mb-3 p-3 border rounded">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <h6 class="mb-0">${item.name}</h6>
+                <button class="btn btn-sm btn-outline-danger" onclick="removeFromCart('${item.id}')">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-secondary" onclick="updateQuantity('${item.id}', -1)">
+                        <i class="bi bi-dash"></i>
+                    </button>
+                    <button class="btn btn-outline-secondary" disabled>${item.quantity}</button>
+                    <button class="btn btn-outline-secondary" onclick="updateQuantity('${item.id}', 1)">
+                        <i class="bi bi-plus"></i>
+                    </button>
+                </div>
+                <strong class="text-primary">TSh ${(item.price * item.quantity).toFixed(2)}</strong>
+            </div>
+        </div>
+    `).join('');
+
+        const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        document.getElementById('cartTotal').textContent = total.toFixed(2);
+        document.getElementById('processBtn').disabled = false;
+    }
+
+    // Clear cart
+    document.getElementById('clearBtn').addEventListener('click', function () {
+        if (cart.length > 0) {
+            Swal.fire({
+                title: 'Clear Cart?',
+                text: "Are you sure you want to remove all items?",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, clear it!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    cart = [];
+                    updateCart();
+                    Swal.fire(
+                        'Cleared!',
+                        'Your cart has been cleared.',
+                        'success'
+                    )
+                }
+            })
+        }
+    });
+
+    // Process sale
+    document.getElementById('processBtn').addEventListener('click', function () {
+        if (cart.length === 0) return;
+
+        const paymentMethod = document.getElementById('paymentMethod').value;
+        const items = cart.map(item => ({
+            product_id: item.id,
+            quantity: item.quantity
+        }));
+
+        this.disabled = true;
+        this.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Processing...';
+
+        fetch('/sales/api/process-sale/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                items: items,
+                payment_method: paymentMethod
+            })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('saleId').textContent = data.sale_id;
+                    document.getElementById('saleTotal').textContent = data.total.toFixed(2);
+
+                    // Update receipt link
+                    const receiptBtn = document.getElementById('receiptLink');
+                    receiptBtn.href = `/sales/sales/${data.sale_id}/pdf/`;
+
+                    const modal = new bootstrap.Modal(document.getElementById('successModal'));
+                    modal.show();
+
+                    cart = [];
+                    updateCart();
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Transaction Failed',
+                        text: data.error
+                    });
+                }
+            })
+            .catch(error => {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'System Error',
+                    text: 'Error processing sale: ' + error
+                });
+            })
+            .finally(() => {
+                this.disabled = false;
+                this.innerHTML = '<i class="bi bi-check-circle"></i> Process Sale';
+            });
+    });
+
+    // Get CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+</script>
+
+<style>
+    .product-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+        transition: all 0.3s ease;
+    }
+
+    .cart-item {
+        background-color: #f8f9fa;
+        transition: all 0.3s ease;
+    }
+
+    .cart-item:hover {
+        background-color: #e9ecef;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,784 @@
+{% extends 'base.html' %}
+
+{% block title %}AI Insights - AI Shop Management{% endblock %}
+{% block page_title %}AI-Powered Insights{% endblock %}
+
+{% block extra_css %}
+<style>
+    .ai-dashboard {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        min-height: 100vh;
+        padding: 2rem 0;
+    }
+
+    .glass-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .glass-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.25);
+    }
+
+    .metric-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .metric-card::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+        animation: pulse 3s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+
+        0%,
+        100% {
+            transform: scale(1);
+            opacity: 0.5;
+        }
+
+        50% {
+            transform: scale(1.1);
+            opacity: 0.8;
+        }
+    }
+
+    .metric-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin: 0.5rem 0;
+    }
+
+    .metric-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .metric-icon {
+        font-size: 3rem;
+        opacity: 0.3;
+        position: absolute;
+        right: 1rem;
+        bottom: 1rem;
+    }
+
+    .ai-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 20px;
+        padding: 2rem;
+        color: white;
+        margin-bottom: 2rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .ai-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="rgba(255,255,255,0.1)" d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,112C672,96,768,96,864,112C960,128,1056,160,1152,160C1248,160,1344,128,1392,112L1440,96L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg>') no-repeat bottom;
+        background-size: cover;
+    }
+
+    .chart-container {
+        position: relative;
+        height: 350px;
+        padding: 1rem;
+    }
+
+    .insight-badge {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        border-radius: 50px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin: 0.25rem;
+    }
+
+    .badge-success {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        color: white;
+    }
+
+    .badge-warning {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+    }
+
+    .badge-danger {
+        background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        color: white;
+    }
+
+    .badge-info {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        color: white;
+    }
+
+    .recommendation-card {
+        border-left: 4px solid #667eea;
+        background: white;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border-radius: 10px;
+        transition: all 0.3s ease;
+    }
+
+    .recommendation-card:hover {
+        transform: translateX(5px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .anomaly-item {
+        background: white;
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 0.75rem;
+        border-left: 4px solid #ef4444;
+        transition: all 0.3s ease;
+    }
+
+    .anomaly-item:hover {
+        transform: translateX(5px);
+        box-shadow: 0 4px 15px rgba(239, 68, 68, 0.2);
+    }
+
+    .stock-table {
+        background: white;
+        border-radius: 15px;
+        overflow: hidden;
+    }
+
+    .stock-table thead {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .stock-table tbody tr {
+        transition: background 0.3s ease;
+    }
+
+    .stock-table tbody tr:hover {
+        background: rgba(102, 126, 234, 0.05);
+    }
+
+    .refresh-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        color: white;
+        padding: 0.5rem 1.5rem;
+        border-radius: 50px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .refresh-btn:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ai-dashboard">
+    <div class="container-fluid">
+        <!-- AI Header -->
+        <div class="ai-header">
+            <div class="d-flex justify-content-between align-items-center position-relative">
+                <div>
+                    <h2 class="mb-2">
+                        <i class="bi bi-robot me-2"></i>
+                        AI-Powered Business Intelligence
+                    </h2>
+                    <p class="mb-0 opacity-90">
+                        Real-time analytics and predictive insights powered by machine learning
+                    </p>
+                </div>
+                <button class="refresh-btn" onclick="location.reload()">
+                    <i class="bi bi-arrow-clockwise me-2"></i>
+                    Refresh Data
+                </button>
+            </div>
+        </div>
+
+        <!-- System Data Summary -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="glass-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <h5 class="mb-1"><i class="bi bi-database-fill"></i> Live System Data</h5>
+                                <small class="text-muted">Data is pulled directly from sales and inventory tables.</small>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-info">{{ system_data.period_label }}</span>
+                            </div>
+                        </div>
+                        <div class="row gy-3">
+                            <div class="col-md-3">
+                                <strong>Total Revenue</strong>
+                                <div class="h5 mt-2">TSh {{ system_data.total_sales_30d|floatformat:0 }}</div>
+                            </div>
+                            <div class="col-md-3">
+                                <strong>Total Transactions</strong>
+                                <div class="h5 mt-2">{{ system_data.total_transactions_30d }}</div>
+                            </div>
+                            <div class="col-md-3">
+                                <strong>Average Transaction</strong>
+                                <div class="h5 mt-2">TSh {{ system_data.avg_transaction_30d|floatformat:0 }}</div>
+                            </div>
+                            <div class="col-md-3">
+                                <strong>Low Stock Items</strong>
+                                <div class="h5 mt-2">{{ system_data.low_stock_count }}</div>
+                            </div>
+                        </div>
+                        <hr class="my-3"/>
+                        <div class="row gy-3">
+                            <div class="col-md-4">
+                                <strong>Tracked Products</strong>
+                                <div class="h5 mt-2">{{ system_data.total_products }}</div>
+                            </div>
+                            <div class="col-md-8">
+                                <strong>Top Categories (Revenue)</strong>
+                                <div class="mt-2">
+                                    {% if system_data.top_categories %}
+                                        <ul class="list-unstyled mb-0">
+                                            {% for category in system_data.top_categories %}
+                                                <li class="small">{{ category.product__category__name|default:'Unknown' }}: TSh {{ category.total_revenue|floatformat:0 }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    {% else %}
+                                        <span class="text-muted">No category sales data yet.</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Key Metrics Row -->
+        <div class="row mb-4">
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="metric-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <div class="metric-label">Next Day Forecast</div>
+                    <div class="metric-value">TSh {{ forecast_summary.next_value|floatformat:0 }}</div>
+                    <div class="small">For {{ forecast_summary.next_date|default:'N/A' }}</div>
+                    <i class="bi bi-calendar-event metric-icon"></i>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="metric-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                    <div class="metric-label">Forecast Trend</div>
+                    <div class="metric-value">{{ forecast_summary.trend|default:'Unknown' }}</div>
+                    <div class="small">Change {{ forecast_summary.change_pct|floatformat:1 }}%</div>
+                    <i class="bi bi-arrow-up-right metric-icon"></i>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="metric-card" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
+                    <div class="metric-label">Insights Generated</div>
+                    <div class="metric-value">{{ total_insights|default:"12" }}</div>
+                    <div class="small">Actionable recommendations</div>
+                    <i class="bi bi-lightbulb metric-icon"></i>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="metric-card" style="
+                    {% if risk_level == 'High' %}
+                        background: linear-gradient(135deg, #ef4444 0%, #f97316 100%);
+                    {% elif risk_level == 'Medium' %}
+                        background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);
+                    {% else %}
+                        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+                    {% endif %}
+                ">
+                    <div class="metric-label">Risk Level</div>
+                    <div class="metric-value">{{ risk_level|default:"Low" }}</div>
+                    <div class="small">Stock & sales health</div>
+                    <i class="bi bi-shield-check metric-icon"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="glass-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0"><i class="bi bi-lightning-charge-fill text-warning"></i> AI Recommendation</h5>
+                            <span class="badge bg-secondary">Action</span>
+                        </div>
+                        <p class="mb-0">{{ ai_action.message }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="row mb-4">
+            <!-- Sales Forecast Chart -->
+            <div class="col-lg-8 mb-4">
+                <div class="glass-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0">
+                                <i class="bi bi-graph-up-arrow text-primary"></i>
+                                7-Day Sales Forecast
+                            </h5>
+                            <span class="insight-badge badge-info">
+                                <i class="bi bi-cpu"></i> ML Powered
+                            </span>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="forecastChart"></canvas>
+                        </div>
+                        <div class="mt-3 small text-muted">
+                            <i class="bi bi-info-circle"></i>
+                            Prediction based on actual historical sales data and system inventory trends
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Product Performance Chart -->
+            <div class="col-lg-4 mb-4">
+                <div class="glass-card">
+                    <div class="card-body">
+                        <h5 class="mb-3">
+                            <i class="bi bi-pie-chart text-success"></i>
+                            Top Products
+                        </h5>
+                        <div class="chart-container" style="height: 300px;">
+                            <canvas id="productChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Row -->
+        <div class="row mb-4">
+            <!-- Revenue Trend -->
+            <div class="col-lg-6 mb-4">
+                <div class="glass-card">
+                    <div class="card-body">
+                        <h5 class="mb-3">
+                            <i class="bi bi-cash-stack text-success"></i>
+                            Revenue Trend Analysis
+                        </h5>
+                        <div class="chart-container" style="height: 280px;">
+                            <canvas id="revenueChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stock Health Radar -->
+            <div class="col-lg-6 mb-4">
+                <div class="glass-card">
+                    <div class="card-body">
+                        <h5 class="mb-3">
+                            <i class="bi bi-radar text-warning"></i>
+                            Inventory Health Score
+                        </h5>
+                        <div class="chart-container" style="height: 280px;">
+                            <canvas id="radarChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Insights Row -->
+        <div class="row">
+            <!-- Stock Predictions -->
+            <div class="col-lg-6 mb-4">
+                <div class="glass-card">
+                    <div class="card-body">
+                        <h5 class="mb-3">
+                            <i class="bi bi-exclamation-triangle text-warning"></i>
+                            Stock-out Predictions
+                        </h5>
+                        <div class="stock-table">
+                            <table class="table table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Product</th>
+                                        <th>Stock</th>
+                                        <th>Daily Sales</th>
+                                        <th>Days Left</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in stock_predictions %}
+                                    <tr>
+                                        <td class="fw-bold">{{ item.product }}</td>
+                                        <td>{{ item.current_stock }}</td>
+                                        <td>{{ item.daily_sales }}</td>
+                                        <td class="fw-bold text-danger">{{ item.days_until_stockout }}</td>
+                                        <td>
+                                            {% if item.status == 'Critical' %}
+                                            <span class="badge bg-danger">
+                                                <i class="bi bi-exclamation-circle"></i> Critical
+                                            </span>
+                                            {% else %}
+                                            <span class="badge bg-warning text-dark">
+                                                <i class="bi bi-exclamation-triangle"></i> Warning
+                                            </span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="5" class="text-center py-4">
+                                            <i class="bi bi-check-circle text-success" style="font-size: 2rem;"></i>
+                                            <p class="mb-0 mt-2 text-muted">All products have healthy stock levels</p>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Anomalies & Recommendations -->
+            <div class="col-lg-6 mb-4">
+                <div class="glass-card mb-4">
+                    <div class="card-body">
+                        <h5 class="mb-3">
+                            <i class="bi bi-exclamation-diamond text-danger"></i>
+                            Detected Anomalies
+                        </h5>
+                        {% if anomalies %}
+                        {% for anomaly in anomalies %}
+                        <div class="anomaly-item">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1 text-danger">
+                                        <i class="bi bi-lightning-fill"></i>
+                                        {{ anomaly.type }} Detected
+                                    </h6>
+                                    <p class="mb-0 small">{{ anomaly.description }}</p>
+                                </div>
+                                <span class="badge bg-danger">{{ anomaly.date|date:"M d" }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        {% else %}
+                        <div class="text-center py-4">
+                            <i class="bi bi-check-circle text-success" style="font-size: 3rem;"></i>
+                            <p class="mb-0 mt-2 text-muted">No anomalies detected in recent data</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="glass-card">
+                    <div class="card-body">
+                        <h5 class="mb-3">
+                            <i class="bi bi-lightbulb text-success"></i>
+                            AI Recommendations
+                        </h5>
+                        {% if recommendations %}
+                        {% for rec in recommendations %}
+                        <div class="recommendation-card">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h6 class="mb-0 text-primary">
+                                    <i class="bi bi-arrow-right-circle"></i>
+                                    {{ rec.type }}
+                                </h6>
+                                <span class="insight-badge badge-success">{{ rec.score }}</span>
+                            </div>
+                            <p class="mb-0 small text-muted">{{ rec.message }}</p>
+                        </div>
+                        {% endfor %}
+                        {% else %}
+                        <div class="text-center py-4">
+                            <i class="bi bi-hourglass-split text-info" style="font-size: 3rem;"></i>
+                            <p class="mb-0 mt-2 text-muted">Analyzing data for recommendations...</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ forecast_dates|json_script:"forecast-dates" }}
+{{ forecast_values|json_script:"forecast-values" }}
+{{ forecast_lowers|json_script:"forecast-lowers" }}
+{{ forecast_uppers|json_script:"forecast-uppers" }}
+{{ top_product_labels|json_script:"top-product-labels" }}
+{{ top_product_values|json_script:"top-product-values" }}
+{{ revenue_trend_dates|json_script:"revenue-trend-dates" }}
+{{ revenue_trend_values|json_script:"revenue-trend-values" }}
+{{ radar_labels|json_script:"radar-labels" }}
+{{ radar_values|json_script:"radar-values" }}
+<script>
+    function readJsonScript(id) {
+        const el = document.getElementById(id);
+        if (!el) return null;
+        try { return JSON.parse(el.textContent); } catch { return null; }
+    }
+
+    // Chart.js default settings
+    Chart.defaults.font.family = "'Inter', sans-serif";
+    Chart.defaults.color = '#64748b';
+
+    // Sales Forecast Chart
+    const forecastCtx = document.getElementById('forecastChart').getContext('2d');
+    const forecastDates = readJsonScript('forecast-dates') || [];
+    const forecastValues = readJsonScript('forecast-values') || [];
+    const forecastLowers = readJsonScript('forecast-lowers') || [];
+    const forecastUppers = readJsonScript('forecast-uppers') || [];
+
+    const hasBand = forecastLowers.some(v => v !== null) && forecastUppers.some(v => v !== null);
+    const forecastDatasets = [];
+    if (hasBand) {
+        forecastDatasets.push({
+            label: 'Lower',
+            data: forecastLowers,
+            borderColor: 'rgba(102, 126, 234, 0.0)',
+            backgroundColor: 'rgba(102, 126, 234, 0.0)',
+            pointRadius: 0,
+            borderWidth: 1,
+            fill: false,
+            order: 2
+        });
+        forecastDatasets.push({
+            label: 'Upper',
+            data: forecastUppers,
+            borderColor: 'rgba(102, 126, 234, 0.0)',
+            backgroundColor: 'rgba(102, 126, 234, 0.08)',
+            pointRadius: 0,
+            borderWidth: 1,
+            fill: '-1',
+            order: 2
+        });
+    }
+    forecastDatasets.push({
+        label: 'Predicted Revenue (TSh)',
+        data: forecastValues,
+        borderColor: '#667eea',
+        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+        borderWidth: 3,
+        pointRadius: 5,
+        pointBackgroundColor: '#fff',
+        pointBorderColor: '#667eea',
+        pointBorderWidth: 2,
+        pointHoverRadius: 7,
+        fill: !hasBand,
+        tension: 0.4,
+        order: 1
+    });
+
+    new Chart(forecastCtx, {
+        type: 'line',
+        data: {
+            labels: forecastDates,
+            datasets: forecastDatasets
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    padding: 12,
+                    borderColor: '#667eea',
+                    borderWidth: 1,
+                    callbacks: {
+                        label: function (context) {
+                            return 'TSh ' + context.parsed.y.toLocaleString(undefined, {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2
+                            });
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    grid: {
+                        borderDash: [5, 5],
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    },
+                    ticks: {
+                        callback: function (value) {
+                            return 'TSh ' + value.toLocaleString();
+                        }
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    }
+                }
+            }
+        }
+    });
+
+    // Product Performance Doughnut Chart
+    const topProductLabelsRaw = readJsonScript('top-product-labels') || [];
+    const topProductValuesRaw = readJsonScript('top-product-values') || [];
+    const topProductLabels = topProductLabelsRaw.length ? topProductLabelsRaw : ['No sales yet'];
+    const topProductValues = topProductValuesRaw.length ? topProductValuesRaw : [1];
+    const productChartColors = topProductValuesRaw.length ? [
+        '#667eea',
+        '#764ba2',
+        '#f093fb',
+        '#11998e',
+        '#fa709a'
+    ] : ['#e5e7eb'];
+
+    const productCtx = document.getElementById('productChart').getContext('2d');
+    new Chart(productCtx, {
+        type: 'doughnut',
+        data: {
+            labels: topProductLabels,
+            datasets: [{
+                data: topProductValues,
+                backgroundColor: productChartColors,
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        usePointStyle: true,
+                        padding: 15
+                    }
+                }
+            }
+        }
+    });
+
+    // Revenue Trend Bar Chart
+    const revenueTrendDates = readJsonScript('revenue-trend-dates') || [];
+    const revenueTrendValues = readJsonScript('revenue-trend-values') || [];
+
+    const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+    new Chart(revenueCtx, {
+        type: 'bar',
+        data: {
+            labels: revenueTrendDates,
+            datasets: [{
+                label: 'Daily Revenue (TSh)',
+                data: revenueTrendValues,
+                backgroundColor: 'rgba(102, 126, 234, 0.8)',
+                borderColor: '#667eea',
+                borderWidth: 2,
+                borderRadius: 10
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        borderDash: [5, 5],
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    },
+                    ticks: {
+                        callback: function (value) {
+                            return 'TSh ' + value.toLocaleString();
+                        }
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    }
+                }
+            }
+        }
+    });
+
+    // Inventory Health Radar Chart
+    const radarLabels = readJsonScript('radar-labels') || ['Stock Level', 'Turnover Rate', 'Demand', 'Profit Margin', 'Availability'];
+    const radarValues = readJsonScript('radar-values') || [0, 0, 0, 0, 0];
+
+    const radarCtx = document.getElementById('radarChart').getContext('2d');
+    new Chart(radarCtx, {
+        type: 'radar',
+        data: {
+            labels: radarLabels,
+            datasets: [{
+                label: 'Current Health',
+                data: radarValues,
+                backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                borderColor: '#667eea',
+                borderWidth: 2,
+                pointBackgroundColor: '#667eea',
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: '#667eea'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                r: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: {
+                        stepSize: 20
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

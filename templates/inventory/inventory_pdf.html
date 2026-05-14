@@ -1,0 +1,60 @@
+{% extends "pdf_base.html" %}
+
+{% block report_title %}Inventory Report{% endblock %}
+
+{% block content %}
+<div class="summary-box">
+    <table style="margin-bottom: 0;">
+        <tr>
+            <td><strong>Total Products:</strong> {{ total_products }}</td>
+            <td class="text-right"><strong>Total Value:</strong> <span class="text-success">TSh {{
+                    total_value|floatformat:2 }}</span></td>
+        </tr>
+        <tr>
+            <td><strong>Low Stock Items:</strong> <span class="text-warning">{{ low_stock_products }}</span></td>
+            <td class="text-right"><strong>Out of Stock:</strong> <span class="text-danger">{{ out_of_stock }}</span>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2" class="text-right"><strong>Date:</strong> {{ now|date:"M d, Y H:i" }}</td>
+        </tr>
+    </table>
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th>Product Name</th>
+            <th>Category</th>
+            <th>Stock</th>
+            <th>Buy Price</th>
+            <th>Sell Price</th>
+            <th class="text-right">Value</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for product in products %}
+        <tr>
+            <td>
+                {{ product.name }}
+                <br><small style="color: #666;">{{ product.barcode }}</small>
+            </td>
+            <td>{{ product.category.name|default:"-" }}</td>
+            <td>
+                {{ product.stock_quantity }}
+                {% if product.stock_quantity <= product.reorder_level %} <span style="color: red; font-size: 10px;">
+                    (Low)</span>
+                    {% endif %}
+            </td>
+            <td>{{ product.buy_price|floatformat:2 }}</td>
+            <td>{{ product.sell_price|floatformat:2 }}</td>
+            <td class="text-right">TSh {{ product.stock_value|floatformat:2 }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="6" class="text-center">No products found.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

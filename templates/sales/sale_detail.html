@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+
+{% block title %}Sale #{{ sale.id }} - AI Shop Management{% endblock %}
+{% block page_title %}Sale Details #{{ sale.id }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col-12">
+            <a href="{% url 'sales_list' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Sales
+            </a>
+            <button onclick="window.print()" class="btn btn-primary">
+                <i class="bi bi-printer"></i> Print Receipt
+            </button>
+            <a href="{% url 'sale_delete' sale.id %}" class="btn btn-outline-danger">
+                <i class="bi bi-trash"></i> Delete Sale
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card">
+                <div class="card-header bg-gradient text-white text-center"
+                    style="background: linear-gradient(135deg, #4f46e5, #06b6d4);">
+                    <h3 class="mb-0">SALE RECEIPT</h3>
+                    <p class="mb-0">AI Shop Management System</p>
+                </div>
+                <div class="card-body">
+                    <!-- Sale Info -->
+                    <div class="row mb-4">
+                        <div class="col-6">
+                            <p class="mb-1"><strong>Sale ID:</strong> #{{ sale.id }}</p>
+                            <p class="mb-1"><strong>Date:</strong> {{ sale.timestamp|date:"Y-m-d" }}</p>
+                            <p class="mb-1"><strong>Time:</strong> {{ sale.timestamp|date:"H:i:s" }}</p>
+                        </div>
+                        <div class="col-6 text-end">
+                            <p class="mb-1"><strong>Cashier:</strong> {{ sale.cashier.username }}</p>
+                            <p class="mb-1"><strong>Role:</strong> {{ sale.cashier.get_role_display }}</p>
+                            <p class="mb-1">
+                                <strong>Payment:</strong>
+                                {% if sale.payment_method == 'cash' %}
+                                <span class="badge bg-success">Cash</span>
+                                {% elif sale.payment_method == 'card' %}
+                                <span class="badge bg-primary">Card</span>
+                                {% else %}
+                                <span class="badge bg-warning">Mobile Money</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- Items Table -->
+                    <h5 class="mb-3">Items Purchased</h5>
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Product</th>
+                                    <th class="text-center">Quantity</th>
+                                    <th class="text-end">Unit Price</th>
+                                    <th class="text-end">Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in sale.items.all %}
+                                <tr>
+                                    <td>{{ forloop.counter }}</td>
+                                    <td>
+                                        <strong>{{ item.product.name }}</strong>
+                                        <br><small class="text-muted">{{ item.product.barcode }}</small>
+                                    </td>
+                                    <td class="text-center">{{ item.quantity }}</td>
+                                    <td class="text-end">TSh {{ item.price_at_sale }}</td>
+                                    <td class="text-end"><strong>TSh {{ item.subtotal }}</strong></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot class="table-light">
+                                <tr>
+                                    <td colspan="4" class="text-end"><strong>TOTAL:</strong></td>
+                                    <td class="text-end">
+                                        <h5 class="mb-0 text-primary"><strong>TSh {{ sale.total_amount }}</strong></h5>
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+
+                    <div class="text-center mt-4 text-muted">
+                        <p class="mb-0">Thank you for your business!</p>
+                        <small>This is a computer-generated receipt</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    @media print {
+
+        .sidebar,
+        .btn,
+        .border-bottom,
+        nav,
+        .card-header.bg-gradient {
+            display: none !important;
+        }
+
+        .col-lg-8 {
+            max-width: 100% !important;
+        }
+
+        .card {
+            border: none !important;
+            box-shadow: none !important;
+        }
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,212 @@
+{% extends 'base.html' %}
+
+{% block title %}Profit & Loss Report - AI Shop Management{% endblock %}
+{% block page_title %}Profit & Loss Statement{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Date Filter -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Start Date</label>
+                            <input type="date" name="start_date" class="form-control"
+                                value="{{ start_date|date:'Y-m-d' }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">End Date</label>
+                            <input type="date" name="end_date" class="form-control" value="{{ end_date|date:'Y-m-d' }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">&nbsp;</label>
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-filter"></i> Filter
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card border-left-primary">
+                <div class="card-body">
+                    <h6 class="text-muted">Total Revenue</h6>
+                    <h3 class="text-primary">TSh {{ total_revenue|floatformat:2 }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-left-warning">
+                <div class="card-body">
+                    <h6 class="text-muted">Gross Profit</h6>
+                    <h3 class="text-warning">TSh {{ gross_profit|floatformat:2 }}</h3>
+                    <small class="text-muted">Margin: {{ gross_margin|floatformat:1 }}%</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-left-danger">
+                <div class="card-body">
+                    <h6 class="text-muted">Total Expenses</h6>
+                    <h3 class="text-danger">TSh {{ total_expenses|floatformat:2 }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-left-{% if net_profit >= 0 %}success{% else %}danger{% endif %}">
+                <div class="card-body">
+                    <h6 class="text-muted">Net Profit</h6>
+                    <h3 class="text-{% if net_profit >= 0 %}success{% else %}danger{% endif %}">
+                        TSh {{ net_profit|floatformat:2 }}
+                    </h3>
+                    <small class="text-muted">Margin: {{ net_margin|floatformat:1 }}%</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profit & Loss Statement -->
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-gradient text-white"
+                    style="background: linear-gradient(135deg, #4f46e5, #06b6d4);">
+                    <h5 class="mb-0"><i class="bi bi-calculator"></i> Profit & Loss Statement</h5>
+                    <small>Period: {{ start_date|date:"M d, Y" }} - {{ end_date|date:"M d, Y" }}</small>
+                </div>
+                <div class="card-body">
+                    <table class="table">
+                        <tbody>
+                            <tr class="table-light">
+                                <td><strong>Revenue</strong></td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td class="ps-4">Sales Revenue</td>
+                                <td class="text-end">TSh {{ total_revenue|floatformat:2 }}</td>
+                            </tr>
+                            <tr>
+                                <td class="ps-4">Total Transactions</td>
+                                <td class="text-end">{{ total_transactions }}</td>
+                            </tr>
+                            <tr class="table-light">
+                                <td><strong>Total Revenue</strong></td>
+                                <td class="text-end"><strong>TSh {{ total_revenue|floatformat:2 }}</strong></td>
+                            </tr>
+
+                            <tr class="table-light">
+                                <td><strong>Cost of Goods Sold (COGS)</strong></td>
+                                <td class="text-end"><strong>TSh {{ cogs|floatformat:2 }}</strong></td>
+                            </tr>
+
+                            <tr class="table-success">
+                                <td><strong>Gross Profit</strong></td>
+                                <td class="text-end"><strong>TSh {{ gross_profit|floatformat:2 }}</strong></td>
+                            </tr>
+                            <tr>
+                                <td class="ps-4"><em>Gross Margin</em></td>
+                                <td class="text-end"><em>{{ gross_margin|floatformat:1 }}%</em></td>
+                            </tr>
+
+                            <tr class="table-light">
+                                <td><strong>Operating Expenses</strong></td>
+                                <td></td>
+                            </tr>
+                            {% for expense in expense_breakdown %}
+                            <tr>
+                                <td class="ps-4">{{ expense.category__name|default:"Other"|title }}</td>
+                                <td class="text-end">TSh {{ expense.total|floatformat:2 }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td class="ps-4 text-muted">No expenses recorded</td>
+                                <td class="text-end">TSh 0.00</td>
+                            </tr>
+                            {% endfor %}
+                            <tr class="table-light">
+                                <td><strong>Total Expenses</strong></td>
+                                <td class="text-end"><strong>TSh {{ total_expenses|floatformat:2 }}</strong></td>
+                            </tr>
+
+                            <tr class="table-{% if net_profit >= 0 %}success{% else %}danger{% endif %}">
+                                <td><strong>Net Profit</strong></td>
+                                <td class="text-end"><strong>TSh {{ net_profit|floatformat:2 }}</strong></td>
+                            </tr>
+                            <tr>
+                                <td class="ps-4"><em>Net Margin</em></td>
+                                <td class="text-end"><em>{{ net_margin|floatformat:1 }}%</em></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chart -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0"><i class="bi bi-pie-chart"></i> Financial Breakdown</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="financialChart"></canvas>
+
+                    <div class="mt-4">
+                        <h6>Key Metrics</h6>
+                        <ul class="list-unstyled">
+                            <li class="mb-2">
+                                <i class="bi bi-circle-fill text-primary"></i>
+                                Revenue: TSh {{ total_revenue|floatformat:0 }}
+                            </li>
+                            <li class="mb-2">
+                                <i class="bi bi-circle-fill text-warning"></i>
+                                COGS: TSh {{ cogs|floatformat:0 }}
+                            </li>
+                            <li class="mb-2">
+                                <i class="bi bi-circle-fill text-danger"></i>
+                                Expenses: TSh {{ total_expenses|floatformat:0 }}
+                            </li>
+                            <li class="mb-2">
+                                <i class="bi bi-circle-fill text-success"></i>
+                                Profit: TSh {{ net_profit|floatformat:0 }}
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Financial Breakdown Chart
+    const financialCtx = document.getElementById('financialChart').getContext('2d');
+    new Chart(financialCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['COGS', 'Expenses', 'Profit'],
+            datasets: [{
+                data: [{{ cogs|default:0 }}, {{ total_expenses|default:0 }}, {{ net_profit|default:0 }}],
+                backgroundColor: ['#f59e0b', '#ef4444', '#10b981']
+            }]
+        },
+        options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+    });
+</script>
+{% endblock %}

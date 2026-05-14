@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+
+{% block title %}Sales History - AI Shop Management{% endblock %}
+{% block page_title %}Sales History{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col-12">
+            <a href="{% url 'pos' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> New Sale
+            </a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header bg-white">
+            <h5 class="mb-0"><i class="bi bi-receipt"></i> All Sales Transactions</h5>
+        </div>
+        <div class="card-body">
+            {% if sales %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Sale ID</th>
+                            <th>Date & Time</th>
+                            <th>Cashier</th>
+                            <th>Items</th>
+                            <th>Payment Method</th>
+                            <th>Total Amount</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sale in sales %}
+                        <tr>
+                            <td><strong>#{{ sale.id }}</strong></td>
+                            <td>{{ sale.timestamp|date:"Y-m-d H:i" }}</td>
+                            <td>
+                                <i class="bi bi-person-circle"></i> {{ sale.cashier.username }}
+                                <br><small class="text-muted">{{ sale.cashier.get_role_display }}</small>
+                            </td>
+                            <td>
+                                <span class="badge bg-info">{{ sale.items.count }} item{{ sale.items.count|pluralize }}
+                                    in sale</span>
+                            </td>
+                            <td>
+                                {% if sale.payment_method == 'cash' %}
+                                <span class="badge bg-success"><i class="bi bi-cash"></i> Cash</span>
+                                {% elif sale.payment_method == 'card' %}
+                                <span class="badge bg-primary"><i class="bi bi-credit-card"></i> Card</span>
+                                {% else %}
+                                <span class="badge bg-warning"><i class="bi bi-phone"></i> Mobile</span>
+                                {% endif %}
+                            </td>
+                            <td><strong class="text-primary">TSh {{ sale.total_amount|floatformat:2 }}</strong></td>
+                            <td>
+                                <a href="{% url 'sale_detail' sale.id %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye"></i> View
+                                </a>
+                                <a href="{% url 'sale_delete' sale.id %}" class="btn btn-sm btn-outline-danger">
+                                    <i class="bi bi-trash"></i> Delete
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Summary Stats -->
+            <div class="row mt-4">
+                <div class="col-md-4">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h6 class="text-muted">Total Sales</h6>
+                            <h3 class="text-primary">{{ sales.count }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h6 class="text-muted">Total Revenue</h6>
+                            <h3 class="text-success">TSh {{ total_revenue|floatformat:2 }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h6 class="text-muted">Average Sale</h6>
+                            <h3 class="text-info">TSh {{ average_sale|floatformat:2 }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> No sales recorded yet.
+                <a href="{% url 'pos' %}" class="alert-link">Start selling now!</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

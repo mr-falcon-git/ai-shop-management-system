@@ -1,0 +1,475 @@
+{% extends 'base.html' %}
+
+{% block title %}Expense Dashboard - AI Shop Management{% endblock %}
+{% block page_title %}Expense Analytics{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 20px;
+        padding: 2rem;
+        color: white;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+        border: none;
+        position: relative;
+        overflow: hidden;
+        transition: transform 0.3s ease;
+        height: 100%;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    }
+
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 5px;
+        height: 100%;
+    }
+
+    .stat-card.danger::before {
+        background: linear-gradient(180deg, #ef4444, #dc2626);
+    }
+
+    .stat-card.info::before {
+        background: linear-gradient(180deg, #06b6d4, #0891b2);
+    }
+
+    .stat-card.success::before {
+        background: linear-gradient(180deg, #10b981, #059669);
+    }
+
+    .chart-card {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+        border: none;
+        overflow: hidden;
+        height: 100%;
+    }
+
+    .chart-header {
+        background: linear-gradient(90deg, #f9fafb 0%, #f3f4f6 100%);
+        padding: 1.25rem 1.5rem;
+        border-bottom: 2px solid #e5e7eb;
+    }
+
+    .chart-body {
+        padding: 1.5rem;
+    }
+
+    .table-card {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+        border: none;
+        overflow: hidden;
+    }
+
+    .table-modern {
+        margin-bottom: 0;
+    }
+
+    .table-modern thead {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .table-modern thead th {
+        border: none;
+        padding: 1rem;
+        font-weight: 600;
+        font-size: 0.85rem;
+    }
+
+    .table-modern tbody tr {
+        transition: all 0.3s ease;
+        border-bottom: 1px solid #f3f4f6;
+    }
+
+    .table-modern tbody tr:hover {
+        background: #f9fafb;
+    }
+
+    .table-modern tbody td {
+        padding: 1rem;
+        vertical-align: middle;
+    }
+
+    .btn-action {
+        padding: 0.5rem 1.25rem;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        border: none;
+    }
+
+    .btn-primary-gradient {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        box-shadow: 0 3px 10px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-primary-gradient:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        color: white;
+    }
+
+    .btn-outline-gradient {
+        border: 2px solid #667eea;
+        color: #667eea;
+        background: white;
+    }
+
+    .btn-outline-gradient:hover {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        transform: translateY(-2px);
+    }
+
+    .stat-icon {
+        font-size: 2.5rem;
+        opacity: 0.15;
+        position: absolute;
+        right: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+
+    .period-badge {
+        background: rgba(255, 255, 255, 0.2);
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.9rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Dashboard Header -->
+    <div class="dashboard-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h2 class="mb-2"><i class="bi bi-graph-up-arrow"></i> Expense Analytics</h2>
+                <p class="mb-0 opacity-75">
+                    <span class="period-badge">
+                        <i class="bi bi-calendar-range"></i>
+                        {{ start_date|date:"M d, Y" }} - {{ end_date|date:"M d, Y" }}
+                    </span>
+                </p>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{% url 'expense_list' %}" class="btn btn-outline-gradient">
+                    <i class="bi bi-list-ul"></i> View All
+                </a>
+                <a href="{% url 'expense_create' %}" class="btn btn-primary-gradient">
+                    <i class="bi bi-plus-circle"></i> Add Expense
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-4 mb-3">
+            <div class="stat-card danger">
+                <i class="bi bi-cash-stack stat-icon text-danger"></i>
+                <div class="text-xs font-weight-bold text-danger text-uppercase mb-1"
+                    style="font-size: 0.85rem; font-weight: 700;">
+                    Total Expenses (This Month)
+                </div>
+                <div class="h3 mb-0 font-weight-bold text-gray-800" style="font-size: 1.75rem; font-weight: 700;">
+                    TSh {{ total_expenses|floatformat:2 }}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <div class="stat-card info">
+                <i class="bi bi-receipt stat-icon text-info"></i>
+                <div class="text-xs font-weight-bold text-info text-uppercase mb-1"
+                    style="font-size: 0.85rem; font-weight: 700;">
+                    Total Transactions
+                </div>
+                <div class="h3 mb-0 font-weight-bold text-gray-800" style="font-size: 1.75rem; font-weight: 700;">
+                    {{ expense_count }}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <div class="stat-card success">
+                <i class="bi bi-calculator stat-icon text-success"></i>
+                <div class="text-xs font-weight-bold text-success text-uppercase mb-1"
+                    style="font-size: 0.85rem; font-weight: 700;">
+                    Average Expense
+                </div>
+                <div class="h3 mb-0 font-weight-bold text-gray-800" style="font-size: 1.75rem; font-weight: 700;">
+                    {% if expense_count > 0 %}
+                    TSh {% widthratio total_expenses expense_count 1 %}
+                    {% else %}
+                    TSh 0.00
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <div class="col-lg-8 mb-4">
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h6 class="m-0 font-weight-bold" style="color: #667eea;">
+                        <i class="bi bi-bar-chart-line"></i> Monthly Expense Trend
+                    </h6>
+                </div>
+                <div class="chart-body">
+                    <div style="position: relative; height: 300px;">
+                        <canvas id="monthlyTrendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4 mb-4">
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h6 class="m-0 font-weight-bold" style="color: #667eea;">
+                        <i class="bi bi-pie-chart"></i> Expenses by Category
+                    </h6>
+                </div>
+                <div class="chart-body">
+                    <div style="position: relative; height: 300px;">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Expenses & Category Breakdown -->
+    <div class="row">
+        <div class="col-lg-6 mb-4">
+            <div class="table-card">
+                <div class="chart-header">
+                    <h6 class="m-0 font-weight-bold" style="color: #667eea;">
+                        <i class="bi bi-clock-history"></i> Recent Expenses
+                    </h6>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-modern">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Title</th>
+                                <th class="text-end">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for expense in recent_expenses %}
+                            <tr>
+                                <td><strong>{{ expense.date|date:"M d" }}</strong></td>
+                                <td>{{ expense.title }}</td>
+                                <td class="text-end"><strong class="text-danger">TSh {{ expense.amount|floatformat:2
+                                        }}</strong></td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3" class="text-center text-muted py-4">
+                                    <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+                                    <p class="mt-2 mb-0">No recent expenses</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6 mb-4">
+            <div class="table-card">
+                <div class="chart-header">
+                    <h6 class="m-0 font-weight-bold" style="color: #667eea;">
+                        <i class="bi bi-tags"></i> Category Breakdown
+                    </h6>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-modern">
+                        <thead>
+                            <tr>
+                                <th>Category</th>
+                                <th class="text-end">Total Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in category_breakdown %}
+                            <tr>
+                                <td><strong>{{ item.category__name|default:"Uncategorized" }}</strong></td>
+                                <td class="text-end"><strong class="text-danger">TSh {{ item.total|floatformat:2
+                                        }}</strong></td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="2" class="text-center text-muted py-4">
+                                    <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+                                    <p class="mt-2 mb-0">No data available</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Monthly Trend Chart
+    const monthlyCtx = document.getElementById('monthlyTrendChart').getContext('2d');
+    const monthlyLabels = [{% for item in monthly_expenses %}'{{ item.month|date:"M Y" }}', {% endfor %}];
+    const monthlyData = [{% for item in monthly_expenses %}{ { item.total } }, {% endfor %}];
+
+    new Chart(monthlyCtx, {
+        type: 'bar',
+        data: {
+            labels: monthlyLabels,
+            datasets: [{
+                label: 'Expenses',
+                data: monthlyData,
+                backgroundColor: 'rgba(102, 126, 234, 0.8)',
+                hoverBackgroundColor: 'rgba(118, 75, 162, 0.9)',
+                borderColor: '#667eea',
+                borderWidth: 2,
+                borderRadius: 8,
+            }]
+        },
+        options: {
+            maintainAspectRatio: false,
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    padding: 12,
+                    titleFont: {
+                        size: 14,
+                        weight: 'bold'
+                    },
+                    bodyFont: {
+                        size: 13
+                    },
+                    callbacks: {
+                        label: function (context) {
+                            return 'TSh ' + context.parsed.y.toLocaleString();
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        font: {
+                            weight: 'bold'
+                        }
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function (value) {
+                            return 'TSh ' + value.toLocaleString();
+                        }
+                    },
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    }
+                }
+            }
+        }
+    });
+
+    // Category Pie Chart
+    const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+    const categoryLabels = [{% for item in category_breakdown %}'{{ item.category__name|default:"Uncategorized" }}', {% endfor %}];
+    const categoryData = [{% for item in category_breakdown %}{ { item.total } }, {% endfor %}];
+    const colors = ['#667eea', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#8b5cf6', '#ec4899'];
+
+    new Chart(categoryCtx, {
+        type: 'doughnut',
+        data: {
+            labels: categoryLabels,
+            datasets: [{
+                data: categoryData,
+                backgroundColor: colors,
+                hoverBackgroundColor: colors.map(c => c + 'dd'),
+                borderWidth: 3,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            maintainAspectRatio: false,
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 15,
+                        font: {
+                            size: 12,
+                            weight: 'bold'
+                        },
+                        usePointStyle: true,
+                        pointStyle: 'circle'
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    padding: 12,
+                    titleFont: {
+                        size: 14,
+                        weight: 'bold'
+                    },
+                    bodyFont: {
+                        size: 13
+                    },
+                    callbacks: {
+                        label: function (context) {
+                            const label = context.label || '';
+                            const value = context.parsed || 0;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((value / total) * 100).toFixed(1);
+                            return label + ': TSh ' + value.toLocaleString() + ' (' + percentage + '%)';
+                        }
+                    }
+                }
+            },
+            cutout: '65%'
+        }
+    });
+</script>
+{% endblock %}

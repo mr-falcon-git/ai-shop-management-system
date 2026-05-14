@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+
+{% block title %}Login - AI Shop Management{% endblock %}
+
+{% block login_content %}
+<div class="container-fluid vh-100">
+    <div class="row h-100">
+        <!-- Left Side - Branding -->
+        <div class="col-md-6 d-none d-md-flex align-items-center justify-content-center"
+            style="background: linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%);">
+            <div class="text-center text-white">
+                <i class="bi bi-shop" style="font-size: 5rem;"></i>
+                <h1 class="mt-4 fw-bold">AI Shop Management</h1>
+                <p class="lead mt-3">Intelligent Inventory & Sales Analytics</p>
+                <div class="mt-5">
+                    <i class="bi bi-robot me-3" style="font-size: 2rem;"></i>
+                    <i class="bi bi-graph-up-arrow me-3" style="font-size: 2rem;"></i>
+                    <i class="bi bi-shield-check" style="font-size: 2rem;"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side - Login Form -->
+        <div class="col-md-6 d-flex align-items-center justify-content-center bg-light">
+            <div class="card shadow-lg" style="width: 100%; max-width: 450px; border-radius: 1rem;">
+                <div class="card-body p-5">
+                    <h3 class="text-center mb-4 fw-bold">Welcome Back</h3>
+                    <p class="text-center text-muted mb-4">Sign in to your account</p>
+
+                    {% if messages %}
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+
+                    <form method="post" action="{% url 'login' %}">
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-person"></i></span>
+                                <input type="text" class="form-control" id="username" name="username"
+                                    placeholder="Enter your username" required autofocus>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                                <input type="password" class="form-control" id="password" name="password"
+                                    placeholder="Enter your password" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="remember" name="remember">
+                            <label class="form-check-label" for="remember">Remember me</label>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 py-2 mb-3">
+                            <i class="bi bi-box-arrow-in-right"></i> Sign In
+                        </button>
+
+                        <div class="text-center">
+                            <small class="text-muted">
+                                Powered by AI & Machine Learning
+                            </small>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

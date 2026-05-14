@@ -1,0 +1,321 @@
+{% extends 'base.html' %}
+
+{% block title %}Product Chatbot - AI Shop Management System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .chat-container {
+        height: 70vh;
+        background: white;
+        border-radius: 1rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .chat-messages {
+        flex: 1;
+        padding: 1.5rem;
+        overflow-y: auto;
+        background: #f8fafc;
+    }
+
+    .chat-input-area {
+        padding: 1.5rem;
+        border-top: 1px solid #e2e8f0;
+        background: white;
+        border-radius: 0 0 1rem 1rem;
+    }
+
+    .message {
+        margin-bottom: 1rem;
+        padding: 0.75rem 1rem;
+        border-radius: 0.75rem;
+        max-width: 80%;
+        word-wrap: break-word;
+    }
+
+    .message.user {
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        color: white;
+        margin-left: auto;
+        text-align: right;
+    }
+
+    .message.bot {
+        background: #e2e8f0;
+        color: #374151;
+    }
+
+    .typing-indicator {
+        display: none;
+        padding: 0.75rem 1rem;
+        background: #e2e8f0;
+        border-radius: 0.75rem;
+        max-width: 80%;
+        margin-bottom: 1rem;
+    }
+
+    .typing-indicator.show {
+        display: block;
+    }
+
+    .typing-dots {
+        display: inline-block;
+    }
+
+    .typing-dots span {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #6b7280;
+        animation: typing 1.4s infinite;
+    }
+
+    .typing-dots span:nth-child(2) {
+        animation-delay: 0.2s;
+    }
+
+    .typing-dots span:nth-child(3) {
+        animation-delay: 0.4s;
+    }
+
+    @keyframes typing {
+        0%, 60%, 100% {
+            transform: translateY(0);
+        }
+        30% {
+            transform: translateY(-10px);
+        }
+    }
+
+    .chat-input {
+        width: 100%;
+        border: 2px solid #e2e8f0;
+        border-radius: 0.5rem;
+        padding: 0.75rem 1rem;
+        font-size: 1rem;
+        transition: border-color 0.3s ease;
+    }
+
+    .chat-input:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    }
+
+    .send-btn {
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.5rem;
+        color: white;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        margin-left: 0.5rem;
+    }
+
+    .send-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(79, 70, 229, 0.4);
+    }
+
+    .send-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .welcome-message {
+        text-align: center;
+        padding: 2rem;
+        color: #6b7280;
+    }
+
+    .welcome-message h3 {
+        color: var(--primary-color);
+        margin-bottom: 1rem;
+    }
+
+    .example-queries {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        justify-content: center;
+        margin-top: 1rem;
+    }
+
+    .example-query {
+        background: #f1f5f9;
+        color: #475569;
+        padding: 0.5rem 1rem;
+        border-radius: 2rem;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: 1px solid #e2e8f0;
+    }
+
+    .example-query:hover {
+        background: var(--primary-color);
+        color: white;
+        transform: translateY(-2px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-white border-0">
+                    <h2 class="card-title mb-0">
+                        <i class="bi bi-chat-dots text-primary me-2"></i>
+                        Product Information Chatbot
+                    </h2>
+                    <small class="text-muted">Ask me about any product to check availability, price in Tsh, and stock levels</small>
+                </div>
+                <div class="card-body p-0">
+                    <div class="chat-container">
+                        <div class="chat-messages" id="chatMessages">
+                            <div class="welcome-message">
+                                <h3>👋 Welcome to the Product Chatbot!</h3>
+                                <p>Ask me about any product by name or barcode to get instant information about:</p>
+                                <ul class="list-unstyled">
+                                    <li>✅ Availability status</li>
+                                    <li>💰 Current selling price (Tsh)</li>
+                                    <li>📦 Remaining stock quantity</li>
+                                    <li>📅 Real-time date & time</li>
+                                </ul>
+                                <div class="example-queries">
+                                    <span class="example-query" onclick="sendExampleQuery('laptop')">laptop</span>
+                                    <span class="example-query" onclick="sendExampleQuery('milk')">milk</span>
+                                    <span class="example-query" onclick="sendExampleQuery('bread')">bread</span>
+                                    <span class="example-query" onclick="sendExampleQuery('123456')">barcode: 123456</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="typing-indicator" id="typingIndicator">
+                            <div class="typing-dots">
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                            </div>
+                            <small class="text-muted ms-2">Bot is typing...</small>
+                        </div>
+                        <div class="chat-input-area">
+                            <div class="input-group">
+                                <input type="text" class="chat-input" id="chatInput" placeholder="Ask about a product (e.g., 'milk', 'laptop', or barcode)..." maxlength="100">
+                                <button class="send-btn" id="sendButton" onclick="sendMessage()">
+                                    <i class="bi bi-send"></i> Send
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const chatMessages = document.getElementById('chatMessages');
+    const chatInput = document.getElementById('chatInput');
+    const sendButton = document.getElementById('sendButton');
+    const typingIndicator = document.getElementById('typingIndicator');
+    const welcomeMessage = document.querySelector('.welcome-message');
+
+    // CSRF token for AJAX requests
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value ||
+                     '{{ csrf_token }}';
+
+    // Enter key to send message
+    chatInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+
+    function sendExampleQuery(query) {
+        chatInput.value = query;
+        sendMessage();
+    }
+
+    function sendMessage() {
+        const message = chatInput.value.trim();
+        if (!message) return;
+
+        // Hide welcome message on first message
+        if (welcomeMessage) {
+            welcomeMessage.style.display = 'none';
+        }
+
+        // Add user message
+        addMessage(message, 'user');
+
+        // Clear input and disable send button
+        chatInput.value = '';
+        sendButton.disabled = true;
+
+        // Show typing indicator
+        typingIndicator.classList.add('show');
+
+        // Scroll to bottom
+        scrollToBottom();
+
+        // Send to server
+        fetch('{% url "chatbot_query" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({ query: message })
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Hide typing indicator
+            typingIndicator.classList.remove('show');
+
+            // Add bot response
+            addMessage(data.response || data.error || 'Sorry, something went wrong.', 'bot');
+
+            // Re-enable send button
+            sendButton.disabled = false;
+
+            // Scroll to bottom
+            scrollToBottom();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            typingIndicator.classList.remove('show');
+            addMessage('Sorry, I encountered an error. Please try again.', 'bot');
+            sendButton.disabled = false;
+            scrollToBottom();
+        });
+    }
+
+    function addMessage(text, type) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${type}`;
+
+        // Convert newlines to <br> tags and preserve formatting
+        const formattedText = text.replace(/\n/g, '<br>');
+        messageDiv.innerHTML = formattedText;
+
+        chatMessages.appendChild(messageDiv);
+    }
+
+    function scrollToBottom() {
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    // Focus input on page load
+    window.addEventListener('load', function() {
+        chatInput.focus();
+    });
+</script>
+{% endblock %}

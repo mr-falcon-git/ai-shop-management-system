@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if product %}Edit{% else %}Add{% endif %} Product{% endblock %}
+{% block page_title %}{% if product %}Edit{% else %}Add New{% endif %} Product{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="name" class="form-label">Product Name *</label>
+                                <input type="text" class="form-control" id="name" name="name"
+                                    value="{{ product.name|default:'' }}" required>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="barcode" class="form-label">Barcode *</label>
+                                <input type="text" class="form-control" id="barcode" name="barcode"
+                                    value="{{ product.barcode|default:'' }}" required>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="category" class="form-label">Category</label>
+                                <select class="form-select" id="category" name="category">
+                                    <option value="">Select Category</option>
+                                    {% for category in categories %}
+                                    <option value="{{ category.id }}" {% if product.category_id == category.id %}selected{% endif %}>
+                                        {{ category.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">
+                                    <a href="{% url 'inventory_category_add' %}">Add category</a>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="supplier" class="form-label">Supplier</label>
+                                <select class="form-select" id="supplier" name="supplier">
+                                    <option value="">Select Supplier</option>
+                                    {% for supplier in suppliers %}
+                                    <option value="{{ supplier.id }}" {% if product.supplier_id == supplier.id %}selected{% endif %}>
+                                        {{ supplier.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">
+                                    <a href="{% url 'supplier_add' %}">Add supplier</a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description"
+                                rows="3">{{ product.description|default:'' }}</textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="unit" class="form-label">Unit *</label>
+                                <input type="text" class="form-control" id="unit" name="unit"
+                                    placeholder="e.g. kg, pcs, box" value="{{ product.unit|default:'pcs' }}" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="buy_price" class="form-label">Buy Price (TSh) *</label>
+                                <input type="number" step="0.01" class="form-control" id="buy_price" name="buy_price"
+                                    value="{{ product.buy_price|default:'0' }}" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="sell_price" class="form-label">Sell Price (TSh) *</label>
+                                <input type="number" step="0.01" class="form-control" id="sell_price" name="sell_price"
+                                    value="{{ product.sell_price|default:'0' }}" required>
+                            </div>
+                        </div>
+
+                        <div class="card bg-light mb-3">
+                            <div class="card-body">
+                                <h6 class="card-title"><i class="bi bi-calculator"></i> Bulk Stock Calculator</h6>
+                                <div class="row g-2 align-items-end">
+                                    <div class="col-md-4">
+                                        <label class="form-label small">Quantity (Bags/Boxes)</label>
+                                        <input type="number" class="form-control form-control-sm" id="calc_qty"
+                                            placeholder="e.g. 2">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label small">Size per Unit</label>
+                                        <input type="number" class="form-control form-control-sm" id="calc_size"
+                                            placeholder="e.g. 50">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <button type="button" class="btn btn-sm btn-outline-primary w-100"
+                                            onclick="calculateStock()">
+                                            Calculate Total
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="stock_quantity" class="form-label">Total Stock Quantity *</label>
+                                <input type="number" class="form-control" id="stock_quantity" name="stock_quantity"
+                                    value="{{ product.stock_quantity|default:'0' }}" required>
+                                <div class="form-text">This is the total trackable amount (e.g. 100 kg).</div>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="reorder_level" class="form-label">Reorder Level *</label>
+                                <input type="number" class="form-control" id="reorder_level" name="reorder_level"
+                                    value="{{ product.reorder_level|default:'10' }}" required>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'product_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save"></i> {% if product %}Update{% else %}Save{% endif %} Product
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function calculateStock() {
+        const qty = parseFloat(document.getElementById('calc_qty').value) || 0;
+        const size = parseFloat(document.getElementById('calc_size').value) || 0;
+        const currentStock = parseFloat(document.getElementById('stock_quantity').value) || 0;
+
+        if (qty > 0 && size > 0) {
+            const total = qty * size;
+
+            Swal.fire({
+                title: 'Update Stock?',
+                text: `Calculated: ${qty} x ${size} = ${total}. Do you want to set Total Stock to ${total} or ADD to current (${currentStock})?`,
+                showDenyButton: true,
+                showCancelButton: true,
+                confirmButtonText: `Set to ${total}`,
+                denyButtonText: `Add (+${total})`,
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('stock_quantity').value = total;
+                } else if (result.isDenied) {
+                    document.getElementById('stock_quantity').value = currentStock + total;
+                }
+            });
+        } else {
+            Swal.fire('Error', 'Please enter valid quantity and size.', 'error');
+        }
+    }
+</script>
+{% endblock %}

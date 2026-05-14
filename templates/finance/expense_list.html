@@ -1,0 +1,447 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Expense Management - AI Shop System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .expense-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 20px;
+        padding: 2.5rem;
+        color: white;
+        margin-bottom: 2rem;
+        box-shadow: 0 15px 35px rgba(102, 126, 234, 0.3);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .expense-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -10%;
+        width: 300px;
+        height: 300px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+    }
+
+    .filter-card {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+        border: none;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        overflow: hidden;
+    }
+
+    .filter-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+        border: none;
+        position: relative;
+        overflow: hidden;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        height: 100%;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+    }
+
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 6px;
+        height: 100%;
+    }
+
+    .stat-card.total::before {
+        background: linear-gradient(180deg, #ef4444, #dc2626);
+    }
+
+    .stat-card.count::before {
+        background: linear-gradient(180deg, #3b82f6, #2563eb);
+    }
+
+    .stat-card.average::before {
+        background: linear-gradient(180deg, #10b981, #059669);
+    }
+
+    .expense-table-card {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+        border: none;
+        overflow: hidden;
+    }
+
+    .expense-table {
+        margin-bottom: 0;
+    }
+
+    .expense-table thead {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .expense-table thead th {
+        border: none;
+        padding: 1.25rem 1rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        letter-spacing: 0.5px;
+    }
+
+    .expense-table tbody tr {
+        transition: all 0.3s ease;
+        border-bottom: 1px solid #f3f4f6;
+    }
+
+    .expense-table tbody tr:hover {
+        background: linear-gradient(90deg, #f9fafb 0%, #f3f4f6 100%);
+        transform: scale(1.005);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+    }
+
+    .expense-table tbody td {
+        padding: 1.25rem 1rem;
+        vertical-align: middle;
+    }
+
+    .badge-category {
+        padding: 0.6rem 1.2rem;
+        border-radius: 25px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        background: linear-gradient(135deg, #06b6d4, #0891b2);
+        color: white;
+        box-shadow: 0 3px 10px rgba(6, 182, 212, 0.3);
+        display: inline-block;
+    }
+
+    .badge-uncategorized {
+        background: linear-gradient(135deg, #6b7280, #4b5563);
+        box-shadow: 0 3px 10px rgba(107, 114, 128, 0.3);
+    }
+
+    .amount-display {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: #ef4444;
+        text-shadow: 0 1px 2px rgba(239, 68, 68, 0.1);
+    }
+
+    .action-btn {
+        padding: 0.6rem 1.2rem;
+        border-radius: 10px;
+        transition: all 0.3s ease;
+        border: 2px solid;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .action-btn-edit {
+        color: #3b82f6;
+        border-color: #3b82f6;
+        background: white;
+    }
+
+    .action-btn-edit:hover {
+        background: #3b82f6;
+        color: white;
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
+    }
+
+    .action-btn-delete {
+        color: #ef4444;
+        border-color: #ef4444;
+        background: white;
+    }
+
+    .action-btn-delete:hover {
+        background: #ef4444;
+        color: white;
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(239, 68, 68, 0.4);
+    }
+
+    .btn-primary-custom {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        padding: 0.85rem 1.8rem;
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+        color: white;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .btn-primary-custom:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 30px rgba(102, 126, 234, 0.5);
+        color: white;
+    }
+
+    .btn-outline-custom {
+        border: 2px solid white;
+        color: white;
+        padding: 0.85rem 1.8rem;
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        background: transparent;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .btn-outline-custom:hover {
+        background: white;
+        color: #667eea;
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(255, 255, 255, 0.3);
+    }
+
+    .empty-state {
+        padding: 5rem 2rem;
+        text-align: center;
+    }
+
+    .empty-state i {
+        font-size: 6rem;
+        color: #e5e7eb;
+        margin-bottom: 1.5rem;
+    }
+
+    .form-control,
+    .form-select {
+        border-radius: 12px;
+        border: 2px solid #e5e7eb;
+        padding: 0.85rem 1.2rem;
+        transition: all 0.3s ease;
+        font-size: 0.95rem;
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+    }
+
+    .stat-icon {
+        font-size: 3.5rem;
+        opacity: 0.15;
+        position: absolute;
+        right: 1.5rem;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 600;
+        color: #6b7280;
+        margin-bottom: 0.5rem;
+    }
+
+    .page-container {
+        padding: 2rem 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <!-- Modern Header -->
+    <div class="expense-header">
+        <div class="d-flex justify-content-between align-items-center position-relative">
+            <div>
+                <h2 class="mb-2 fw-bold"><i class="bi bi-cash-stack me-2"></i>Expense Management</h2>
+                <p class="mb-0 opacity-90">Track and manage all your business expenses efficiently</p>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{% url 'category_list' %}" class="btn btn-outline-custom">
+                    <i class="bi bi-tags me-1"></i> Categories
+                </a>
+                <a href="{% url 'expense_list_pdf' %}?start_date={{ start_date|default:'' }}&end_date={{ end_date|default:'' }}&category={{ selected_category|default:'' }}"
+                    class="btn btn-outline-custom">
+                    <i class="bi bi-file-pdf me-1"></i> Export PDF
+                </a>
+                <a href="{% url 'expense_create' %}" class="btn btn-primary-custom">
+                    <i class="bi bi-plus-circle me-1"></i> Add Expense
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card filter-card">
+                <div class="card-body p-4">
+                    <h5 class="mb-4 fw-bold"><i class="bi bi-funnel me-2"></i>Filter Expenses</h5>
+                    <form method="get" class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">Start Date</label>
+                            <input type="date" name="start_date" class="form-control"
+                                value="{{ start_date|default:'' }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">End Date</label>
+                            <input type="date" name="end_date" class="form-control" value="{{ end_date|default:'' }}">
+                        </div>
+                        <label class="form-label">&nbsp;</label>
+                        <button type="submit" class="btn btn-primary-custom w-100">
+                            <i class="bi bi-search me-1"></i> Filter
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4 g-4">
+        <div class="col-md-4">
+            <div class="stat-card total">
+                <i class="bi bi-cash-coin stat-icon text-danger"></i>
+                <div class="stat-label">TOTAL EXPENSES</div>
+                <div class="stat-value text-danger">TSh {{ total_expenses|floatformat:2|default:"0.00" }}</div>
+                <small class="text-muted">
+                    {% if start_date or end_date %}
+                    Filtered results
+                    {% else %}
+                    All time
+                    {% endif %}
+                </small>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card count">
+                <i class="bi bi-receipt-cutoff stat-icon text-primary"></i>
+                <div class="stat-label">TOTAL TRANSACTIONS</div>
+                <div class="stat-value text-primary">{{ expenses.count }}</div>
+                <small class="text-muted">Expense entries</small>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card average">
+                <i class="bi bi-graph-up-arrow stat-icon text-success"></i>
+                <div class="stat-label">AVERAGE EXPENSE</div>
+                <div class="stat-value text-success">
+                    {% if expenses.count > 0 %}
+                    TSh {% widthratio total_expenses expenses.count 1 %}
+                    {% else %}
+                    TSh 0.00
+                    {% endif %}
+                </div>
+                <small class="text-muted">Per transaction</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Expenses Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="expense-table-card">
+                <div class="table-responsive">
+                    <table class="table expense-table">
+                        <thead>
+                            <tr>
+                                <th><i class="bi bi-calendar3 me-2"></i>Date</th>
+                                <th><i class="bi bi-card-text me-2"></i>Title</th>
+                                <th><i class="bi bi-tag me-2"></i>Category</th>
+                                <th><i class="bi bi-currency-exchange me-2"></i>Amount</th>
+                                <th><i class="bi bi-person me-2"></i>Added By</th>
+                                <th class="text-center"><i class="bi bi-gear me-2"></i>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for expense in expenses %}
+                            <tr>
+                                <td>
+                                    <strong>{{ expense.date|date:"M d, Y" }}</strong>
+                                    <br>
+                                    <small class="text-muted">{{ expense.date|date:"l" }}</small>
+                                </td>
+                                <td>
+                                    <div>
+                                        <strong class="d-block mb-1">{{ expense.title }}</strong>
+                                        {% if expense.description %}
+                                        <small class="text-muted">{{ expense.description|truncatewords:15 }}</small>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if expense.category %}
+                                    <span class="badge-category">{{ expense.category.name }}</span>
+                                    {% else %}
+                                    <span class="badge-category badge-uncategorized">Uncategorized</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="amount-display">TSh {{ expense.amount|floatformat:2 }}</span>
+                                </td>
+                                <td>
+                                    <i class="bi bi-person-circle me-1"></i> {{ expense.added_by.username }}
+                                </td>
+                                <td class="text-center">
+                                    <div class="d-flex gap-2 justify-content-center">
+                                        <a href="{% url 'expense_update' expense.id %}"
+                                            class="action-btn action-btn-edit">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <a href="{% url 'expense_delete' expense.id %}"
+                                            class="action-btn action-btn-delete">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6">
+                                    <div class="empty-state">
+                                        <i class="bi bi-inbox"></i>
+                                        <h4 class="text-muted mb-3 fw-bold">No Expenses Found</h4>
+                                        <p class="text-muted mb-4">Start tracking your expenses by adding your first
+                                            entry</p>
+                                        <a href="{% url 'expense_create' %}" class="btn btn-primary-custom">
+                                            <i class="bi bi-plus-circle me-2"></i> Add Your First Expense
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
